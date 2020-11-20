@@ -9,6 +9,10 @@ bufferSize  = 1024
 msgFromServer       = "inserted one metric"
 bytesToSend         = str.encode(msgFromServer)
 
+def executeQuery(dbCursor, query):
+    dbCursor.execute(query)
+    print query
+
 def createUdpSocket():
     # Create a datagram socket
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -31,13 +35,14 @@ if __name__ == "__main__":
     udpSocket = createUdpSocket()
 
     dbCursor = None
-    while(dbCursor==None):
+    while(dbCursor == None):
+        print("connecting to mariadb...")
         time.sleep(2)
         dbCursor = createMariaDbConnection()
 
-    dbCursor.execute("CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_hostname varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
-    print("table table_demo created")
-    
+    executeQuery(dbCursor, "CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_host varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
+    executeQuery(dbCursor, "INSERT INTO table_demo(demo_host) VALUES({})".format(socket.gethostbyname(socket.gethostname())))
+
     # Listen for incoming datagrams
     while(True):
         bytesAddressPair = udpSocket.recvfrom(bufferSize)
