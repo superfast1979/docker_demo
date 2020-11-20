@@ -2,16 +2,13 @@ import socket
 import mariadb
 import sys
 import time
+from ipaddress import _IPAddressBase
 
 localIP     = "127.0.0.1"
 localPort   = 20001
 bufferSize  = 1024
 msgFromServer       = "inserted one metric"
 bytesToSend         = str.encode(msgFromServer)
-
-def executeQuery(dbCursor, query):
-    dbCursor.execute(query)
-    print(query)
 
 def createUdpSocket():
     # Create a datagram socket
@@ -25,7 +22,9 @@ def createUdpSocket():
 
 def createMariaDbConnection():
     try:
-        return mariadb.connect(user="root",password="password",host="db",port=3306,database="demo1").cursor()
+        connection = mariadb.connect(user="root",password="password",host="db",port=3306,database="demo1")
+        cursor = connection.cursor()
+        return connection, cursor
     except mariadb.Error as e:
         print("Error connecting to MariaDB platform: {}").format(e)
     return None
@@ -38,11 +37,18 @@ if __name__ == "__main__":
     while(dbCursor == None):
         print("connecting to mariadb...")
         time.sleep(2)
-        dbCursor = createMariaDbConnection()
+        dbConnection, dbCursor = createMariaDbConnection()
 
-    executeQuery(dbCursor, "CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_host varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
-    executeQuery(dbCursor, "INSERT INTO table_demo(demo_host) VALUES({})".format(socket.gethostbyname(socket.gethostname())))
+    dbCursor.execute("DROP TABLE IF EXISTS table_demo")
+    dbCursor.execute("CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_host varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
+    
+    ipAddress = socket.gethostbyname(socket.gethostname())
+    sql = "INSERT INTO table_demo (demo_host) VALUES ('{}')".format(ipAddress)
+    print (sql)
+    dbCursor.execute("INSERT INTO table_demo (demo_host) VALUES ('{}')".format(ipAddress))
 
+    dbConnection.commit()
+    
     # Listen for incoming datagrams
     while(True):
         bytesAddressPair = udpSocket.recvfrom(bufferSize)

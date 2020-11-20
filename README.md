@@ -14,3 +14,9 @@ The udp client send udp packets to the container app.
 The container app save info into mariadb container.
 The webapp shows a simple gui and query the mariadb, also cache the requested queries into redis to lower latency response.
 
+# Install
+
+After installing docker and docker-compose go to root source directory and type:
+docker-compose build
+docker-compose up -d
+docker-compose logs
