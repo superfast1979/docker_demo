@@ -11,7 +11,7 @@ bytesToSend         = str.encode(msgFromServer)
 
 def executeQuery(dbCursor, query):
     dbCursor.execute(query)
-    print query
+    print(query)
 
 def createUdpSocket():
     # Create a datagram socket
