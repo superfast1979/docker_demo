@@ -23,7 +23,7 @@ def createMariaDbConnection():
     try:
         return mariadb.connect(user="root",password="password",host="db",port=3306,database="demo1").cursor()
     except mariadb.Error as e:
-        print(f"Error connecting to MariaDB platform: {e}")
+        print("Error connecting to MariaDB platform: {}").format(e)
     return None
     
 if __name__ == "__main__":
