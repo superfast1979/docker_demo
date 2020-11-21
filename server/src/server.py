@@ -2,20 +2,13 @@ import socket
 import mariadb
 import sys
 import time
-from ipaddress import _IPAddressBase
-
-localIP     = "0.0.0.0"
-localPort   = 20001
-bufferSize  = 1024
-msgFromServer       = "inserted one metric"
-bytesToSend         = str.encode(msgFromServer)
 
 def createUdpSocket():
     # Create a datagram socket
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
     # Bind to clientIp and ip
-    UDPServerSocket.bind((localIP, localPort))
+    UDPServerSocket.bind(("0.0.0.0", 20001))
     print("UDP server up and listening")
 
     return UDPServerSocket
@@ -45,14 +38,14 @@ if __name__ == "__main__":
 
     # Listen for incoming datagrams
     while(True):
-        message, clientIpPort = udpSocket.recvfrom(bufferSize)
+        message, clientIpPort = udpSocket.recvfrom(1024)
         clientIp = clientIpPort[0]
 
         print("Message from Client:{}".format(message))
         print("Client IP Address:{}".format(clientIp))
 
         # Sending a reply to client
-        udpSocket.sendto(bytesToSend, clientIpPort)
+        udpSocket.sendto(str.encode("inserted one metric"), clientIpPort)
 
         dbCursor.execute("INSERT INTO table_demo (demo_client, demo_host) VALUES ('{}', '{}')".format(clientIp, serverIpAddress))
         dbConnection.commit()
