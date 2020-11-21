@@ -4,7 +4,7 @@ import sys
 import time
 from ipaddress import _IPAddressBase
 
-localIP     = "127.0.0.1"
+localIP     = "0.0.0.0"
 localPort   = 20001
 bufferSize  = 1024
 msgFromServer       = "inserted one metric"
@@ -14,50 +14,48 @@ def createUdpSocket():
     # Create a datagram socket
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-    # Bind to address and ip
+    # Bind to clientIp and ip
     UDPServerSocket.bind((localIP, localPort))
     print("UDP server up and listening")
 
     return UDPServerSocket
 
 def createMariaDbConnection():
-    try:
-        connection = mariadb.connect(user="root",password="password",host="db",port=3306,database="demo1")
-        cursor = connection.cursor()
-        return connection, cursor
-    except mariadb.Error as e:
-        print("Error connecting to MariaDB platform: {}").format(e)
-    return None
+    cursor = None
+    while(cursor == None):
+        print("connecting to mariadb...")
+        time.sleep(2)
+        try:
+            connection = mariadb.connect(user="root",password="password",host="db",port=3306,database="demo1")
+            cursor = connection.cursor()
+            return connection, cursor
+        except mariadb.Error as e:
+            print("Error connecting to MariaDB platform: {}").format(e)
     
 if __name__ == "__main__":
 
     udpSocket = createUdpSocket()
-
-    dbCursor = None
-    while(dbCursor == None):
-        print("connecting to mariadb...")
-        time.sleep(2)
-        dbConnection, dbCursor = createMariaDbConnection()
+    dbConnection, dbCursor = createMariaDbConnection()
 
     dbCursor.execute("DROP TABLE IF EXISTS table_demo")
-    dbCursor.execute("CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_host varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
-    
-    ipAddress = socket.gethostbyname(socket.gethostname())
-    sql = "INSERT INTO table_demo (demo_host) VALUES ('{}')".format(ipAddress)
-    print (sql)
-    dbCursor.execute("INSERT INTO table_demo (demo_host) VALUES ('{}')".format(ipAddress))
+    dbCursor.execute("CREATE TABLE IF NOT EXISTS table_demo (demo_id int auto_increment, demo_client varchar(255) not null, demo_host varchar(255) not null, created_at timestamp default current_timestamp, primary key(demo_id))")
+    print("table_demo created")
 
-    dbConnection.commit()
-    
+    serverIpAddress = socket.gethostbyname(socket.gethostname())
+
     # Listen for incoming datagrams
     while(True):
-        bytesAddressPair = udpSocket.recvfrom(bufferSize)
-        message = bytesAddressPair[0]
-        address = bytesAddressPair[1]
+        message, clientIpPort = udpSocket.recvfrom(bufferSize)
+        clientIp = clientIpPort[0]
 
         print("Message from Client:{}".format(message))
-        print("Client IP Address:{}".format(address))
+        print("Client IP Address:{}".format(clientIp))
 
         # Sending a reply to client
-        udpSocket.sendto(bytesToSend, address)
-    
+        udpSocket.sendto(bytesToSend, clientIpPort)
+
+        dbCursor.execute("INSERT INTO table_demo (demo_client, demo_host) VALUES ('{}', '{}')".format(clientIp, serverIpAddress))
+        dbConnection.commit()
+        print("record in table_demo inserted")
+
+    dbConnection.close()
