@@ -9,8 +9,6 @@ serverAddressPort   = ("127.0.0.1", 20001)
 bufferSize          = 1024
 numPacketsToSend      = 10
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="client.py", description="client to send udp traffic")
     parser.add_argument('packetsRate', type=int, help='how many packets are sent each cycle towards the udp server')
