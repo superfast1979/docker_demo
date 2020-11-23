@@ -26,6 +26,7 @@ def getRowsCounter():
     connection.close()
     return number_of_rows
 
+
 @server.route("/")
 def hello():
     number_of_rows = getRowsCounter()
