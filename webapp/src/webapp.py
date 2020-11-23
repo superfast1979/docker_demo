@@ -16,17 +16,19 @@ def createMariaDbConnection():
         except mariadb.Error as e:
             print("Error connecting to MariaDB platform: {}").format(e)
 
-@server.route("/")
-def hello():
+
+def getRowsCounter():
     connection = createMariaDbConnection()
-    server.logger.info('%s connection', connection)
     cursor = connection.cursor()
-    server.logger.info('%s cursor', cursor)
     cursor.execute("SELECT COUNT(*) FROM table_demo")
-    (number_of_rows,)=cursor.fetchone()
-    server.logger.info('%d number_of_rows', number_of_rows)
+    number_of_rows, = cursor.fetchone()
     cursor.close()
     connection.close()
+    return number_of_rows
+
+@server.route("/")
+def hello():
+    number_of_rows = getRowsCounter()
     return "There are {} records inserted in db".format(number_of_rows)
 
 if __name__ == "__main__":

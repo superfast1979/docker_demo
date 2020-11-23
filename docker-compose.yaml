@@ -25,8 +25,10 @@ services:
     build: webapp
     restart: always
     ports:
-      - 5000:5000
-      
+      - 8443:5000
+    networks:
+      - backend-network
+
 volumes:
   db-data:
 networks:
